@@ -37,7 +37,7 @@ class VAE(UNet):
             W // np.power(2, len(channel_mults) - 1)
         )
         self.to_latent = nn.Linear(
-            self.max_channels * self.min_H * self.min_W,
+            self.max_channels,
             2 * latent_dim
         )
         self.from_latent = nn.Linear(
@@ -74,7 +74,7 @@ class VAE(UNet):
         x = self.in_proj(x)
         x = self.down(x)
         x = self.left_middle(x)  # [B, C, H, W]
-        x = torch.flatten(x, 1, 3)  # [B, C*H*W]
+        x = torch.mean(x, dim=[2, 3])  # [B, C] # GAP
         x = self.to_latent(x)  # [B, 2 * latent_dim]
 
         [mu, logvar] = x.chunk(2, dim=1)

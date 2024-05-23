@@ -52,7 +52,7 @@ class VAE(UNet):
         q = self.encode(x)
         z = q.rsample()
         p = self.decode(z)
-
+        
         approx_log_likelihood = -((x - p.loc)**2).sum(dim=[1, 2, 3])
         kl = kl_divergence(
             q,

@@ -11,6 +11,7 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torchsummary import summary
 from tqdm import tqdm
+from amp import get_amp_utils
 
 import wandb
 from dataset import get_dataset
@@ -30,7 +31,7 @@ def train_model(
     test_dataset,
     device: torch.device = torch.device("cpu"),
 ) -> VAE:
-
+    
     with suppress_external_logs():
         lpips = LPIPS(net="vgg")
         lpips = lpips.to(device)
@@ -88,6 +89,8 @@ def train_model(
     best_epoch = -1
     best_epoch_lpips = pow(10, 9)
 
+    autocast, grad_scaler, dtype = get_amp_utils(config)
+
     for epoch in range(config["training"]["num_epochs"]):
         model.train()
         running_losses = []
@@ -100,11 +103,24 @@ def train_model(
                 x, y = batch
 
                 optimizer.zero_grad()
-                x = x.to(device)
-                _, metrics = model(x)
-                loss = metrics["loss"].mean()
-                loss.backward()
-                optimizer.step()
+                if autocast:
+                    with autocast(dtype=dtype):
+                        x = x.to(device)
+                        _, metrics = model(x)
+                        loss = metrics["loss"].mean()
+                else:
+                    x = x.to(device)
+                    _, metrics = model(x)
+                    loss = metrics["loss"].mean()
+
+                if grad_scaler:
+                    grad_scaler.scale(loss).backward()
+                    grad_scaler.step(optimizer)
+                    grad_scaler.update()
+                else:
+                    loss.backward()
+                    optimizer.step()
+
                 if scheduler:
                     scheduler.step()
 
@@ -270,19 +286,26 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str)
     args = parser.parse_args()
 
-    device = torch.device("mps")
-
     with open(args.config, "r") as fs:
         config = yaml.safe_load(fs)
 
+    device = torch.device(config["training"]["device"])
     seed_everything(config["training"]["seed"])
 
     train_dataset, test_dataset = get_dataset(
         config["dataset"]["name"],
-        Path(config["dataset"]["datasets_dir"])
+        Path(config["dataset"]["datasets_dir"]),
+        config["image"]["size"]
     )
 
-    model = VAE(**config["model"])
+    model = VAE(
+        image_channels=config["image"]["channels"],
+        image_size=(
+            config["image"]["size"],
+            config["image"]["size"]
+        ),
+        **config["model"])
+    model = model.to(device)
 
     print("config:")
     pprint(config)
@@ -295,7 +318,8 @@ if __name__ == "__main__":
             config["image"]["size"],
             config["image"]["size"]
         ),
-        batch_size=-1
+        batch_size=-1,
+        device=config["training"]["device"]
     )
 
     train_model(

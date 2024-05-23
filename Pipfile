@@ -16,6 +16,8 @@ pillow = "*"
 scipy = "*"
 gdown = "*"
 ipykernel = "*"
+seaborn = "*"
+lpips = "*"
 
 [dev-packages]
 ipykernel = "*"

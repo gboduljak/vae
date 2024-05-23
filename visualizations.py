@@ -151,4 +151,5 @@ def plot_latent_space_distribution(
     buf = BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close(fig)
     return Image.open(buf)

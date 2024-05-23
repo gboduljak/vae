@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Literal, Tuple, Union
 
 import numpy as np
 import torch
@@ -20,13 +20,16 @@ class VAE(UNet):
         channel_mults: Union[Tuple[int, ...], List[int]] = (1, 2, 2, 2),
         latent_dim: int = 32,
         dropout: int = 0.1,
+        norm: Literal['BatchNorm', 'GroupNorm', 'SpectralNorm'] = 'GroupNorm',
+        **kwargs
     ):
         super(VAE, self).__init__(
             image_channels,
             num_channels,
             num_groups,
             channel_mults,
-            dropout
+            dropout,
+            norm
         )
         [H, W] = image_size
         self.latent_dim = latent_dim

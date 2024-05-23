@@ -1,42 +1,90 @@
-from typing import List, Tuple, Union
+from typing import List, Literal, Tuple, Union
 
 import torch.nn as nn
+from torch.nn.utils import spectral_norm
+
+
+def get_norm(norm: str, channels: int, num_groups: int):
+    match norm:
+        case 'BatchNorm':
+            return nn.BatchNorm2d(channels)
+        case 'GroupNorm':
+            return nn.GroupNorm(num_groups, channels)
+        case 'SpectralNorm':
+            return nn.Identity()
+        case _:
+            raise NotImplementedError()
+
+
+class ConvBlock(nn.Sequential):
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 num_groups: int,
+                 dropout: float,
+                 norm: Literal['BatchNorm', 'GroupNorm', 'SpectralNorm'],
+                 kernel_size: int = 3,
+                 stride: int = 1,
+                 padding: int = 0
+                 ):
+        super(ConvBlock, self).__init__(
+            get_norm(norm, in_channels, num_groups),
+            nn.SiLU(inplace=True),
+            nn.Dropout(dropout, inplace=True) if dropout else nn.Identity(),
+            (
+                spectral_norm(
+                    nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        kernel_size,
+                        stride,
+                        padding
+                    )
+                )
+                if norm == 'SpectralNorm' else
+                nn.Conv2d(
+                    in_channels,
+                    out_channels,
+                    kernel_size,
+                    stride,
+                    padding
+                )
+            ),
+        )
 
 
 class ResidualBlock(nn.Sequential):
-
     def __init__(self,
                  channels: int,
                  num_groups: int,
-                 dropout: float
+                 dropout: float,
+                 norm: Literal['BatchNorm', 'GroupNorm', 'SpectralNorm']
                  ):
-        super(ResidualBlock, self).__init__()
-
-        self.norm1 = nn.GroupNorm(num_groups, channels)
-        self.silu1 = nn.SiLU(inplace=True)
-        self.conv1 = nn.Conv2d(channels, channels, 3, 1, 1)
-        self.norm2 = nn.GroupNorm(num_groups, channels)
-        self.silu2 = nn.SiLU(inplace=True)
-        self.dropout = nn.Dropout(dropout)
-        self.conv2 = nn.Conv2d(channels, channels, 3, 1, 1)
+        super(ResidualBlock, self).__init__(
+            ConvBlock(channels, channels, num_groups, dropout, norm, 3, 1, 1),
+            ConvBlock(channels, channels, num_groups, dropout, norm, 3, 1, 1)
+        )
 
     def forward(self, x):
-        y = x
-        y = self.norm1(y)
-        y = self.silu1(y)
-        y = self.conv1(y)
-        y = self.norm2(y)
-        y = self.silu2(y)
-        y = self.dropout(y)
-        y = self.conv2(y)
-        return y + x
+        return (
+            x + super(ResidualBlock, self).forward(x)
+        )
 
 
-class Downsample(nn.Conv2d):
-    def __init__(self, channels):
+class Downsample(ConvBlock):
+    def __init__(
+        self,
+        channels: int,
+        num_groups: int,
+        dropout: float,
+        norm: Literal['BatchNorm', 'GroupNorm', 'SpectralNorm']
+    ):
         super(Downsample, self).__init__(
-            channels,
-            channels,
+            in_channels=channels,
+            out_channels=channels,
+            num_groups=num_groups,
+            dropout=dropout,
+            norm=norm,
             kernel_size=3,
             stride=2,
             padding=1
@@ -44,11 +92,20 @@ class Downsample(nn.Conv2d):
 
 
 class Upsample(nn.Sequential):
-    def __init__(self, channels):
+    def __init__(self,
+                 channels,
+                 num_groups: int,
+                 dropout: float,
+                 norm: Literal['BatchNorm', 'GroupNorm', 'SpectralNorm']
+                 ):
         super(Upsample, self).__init__(
             nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.Conv2d(
-                channels, channels,
+            ConvBlock(
+                channels,
+                channels,
+                num_groups,
+                dropout,
+                norm,
                 kernel_size=3,
                 stride=1,
                 padding=1
@@ -63,21 +120,24 @@ class UNet(nn.Module):
         num_channels: int = 64,
         num_groups: int = 32,
         channel_mults: Union[Tuple[int, ...], List[int]] = (1, 2, 2, 2),
-        dropout: int = 0.1,
+        dropout: float = 0,
+        norm:  Literal['BatchNorm', 'GroupNorm', 'SpectralNorm'] = 'GroupNorm'
     ):
         super(UNet, self).__init__()
 
         self.in_proj = nn.Conv2d(
             image_channels,
             num_channels,
-            kernel_size=(3, 3),
-            padding=(1, 1)
+            kernel_size=3,
+            padding=1,
+            stride=1
         )
         self.out_proj = nn.Conv2d(
             num_channels,
             image_channels,
-            kernel_size=(3, 3),
-            padding=(1, 1)
+            kernel_size=3,
+            padding=1,
+            stride=1
         )
         num_resolutions = len(channel_mults)
 
@@ -92,49 +152,82 @@ class UNet(nn.Module):
         for i in range(num_resolutions):
             out_channels = in_channels * channel_mults[i]
             down.append(
-                nn.Sequential(
-                    nn.GroupNorm(num_groups, in_channels),
-                    nn.SiLU(inplace=True),
-                    nn.Conv2d(
-                        in_channels,
-                        out_channels,
-                        kernel_size=(3, 3),
-                        padding=(1, 1)
-                    )
+                ConvBlock(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    num_groups=num_groups,
+                    dropout=dropout,
+                    norm=norm,
+                    kernel_size=3,
+                    padding=1,
+                    stride=1
                 )
             )
             in_channels = out_channels
             if i < num_resolutions - 1:
-                down.append(Downsample(in_channels))
+                down.append(
+                    Downsample(
+                        channels=in_channels,
+                        num_groups=num_groups,
+                        dropout=dropout,
+                        norm=norm
+                    )
+                )
 
         in_channels = out_channels
-
         left_middle = [
-            ResidualBlock(out_channels, num_groups, dropout),
-            ResidualBlock(out_channels, num_groups,  dropout)
+            ResidualBlock(
+                channels=out_channels,
+                num_groups=num_groups,
+                dropout=dropout,
+                norm=norm
+            ),
+            ResidualBlock(
+                channels=out_channels,
+                num_groups=num_groups,
+                dropout=dropout,
+                norm=norm
+            ),
         ]
         right_middle = [
-            ResidualBlock(out_channels, num_groups,  dropout),
-            ResidualBlock(out_channels, num_groups,  dropout)
+            ResidualBlock(
+                channels=out_channels,
+                num_groups=num_groups,
+                dropout=dropout,
+                norm=norm
+            ),
+            ResidualBlock(
+                channels=out_channels,
+                num_groups=num_groups,
+                dropout=dropout,
+                norm=norm
+            ),
         ]
 
         for i in reversed(range(num_resolutions)):
             out_channels = in_channels // channel_mults[i]
             up.append(
-                nn.Sequential(
-                    nn.GroupNorm(num_groups, in_channels),
-                    nn.SiLU(inplace=True),
-                    nn.Conv2d(
-                        in_channels,
-                        out_channels,
-                        kernel_size=(3, 3),
-                        padding=(1, 1)
-                    )
+                ConvBlock(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    num_groups=num_groups,
+                    dropout=dropout,
+                    norm=norm,
+                    kernel_size=3,
+                    padding=1,
+                    stride=1
                 )
             )
             in_channels = out_channels
             if i > 0:
-                up.append(Upsample(in_channels))
+                up.append(
+                    Upsample(
+                        channels=in_channels,
+                        num_groups=num_groups,
+                        dropout=dropout,
+                        norm=norm
+                    )
+                )
 
         self.down = nn.Sequential(*down)
         self.left_middle = nn.Sequential(*left_middle)

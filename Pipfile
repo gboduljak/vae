@@ -18,6 +18,7 @@ gdown = "*"
 ipykernel = "*"
 seaborn = "*"
 lpips = "*"
+umap-learn = "*"
 
 [dev-packages]
 ipykernel = "*"

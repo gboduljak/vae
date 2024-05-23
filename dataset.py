@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from torchvision.datasets import CIFAR10, SVHN, CelebA
-from torchvision.transforms import ToTensor, Resize, Compose
+from torchvision.datasets import CIFAR10, MNIST, SVHN, CelebA, FashionMNIST
+from torchvision.transforms import Compose, Resize, ToTensor
 
 
 def get_dataset(dataset: str, datasets_dir: Path, image_size: int):
@@ -10,6 +10,34 @@ def get_dataset(dataset: str, datasets_dir: Path, image_size: int):
         ToTensor()
     ])
     match dataset:
+        case "MNIST":
+            train_dataset = MNIST(
+                root=datasets_dir,
+                train=True,
+                download=True,
+                transform=transforms
+            )
+            test_dataset = MNIST(
+                root=datasets_dir,
+                train=False,
+                download=True,
+                transform=transforms
+            )
+            return train_dataset, test_dataset
+        case "FashionMNIST":
+            train_dataset = FashionMNIST(
+                root=datasets_dir,
+                train=True,
+                download=True,
+                transform=transforms
+            )
+            test_dataset = FashionMNIST(
+                root=datasets_dir,
+                train=False,
+                download=True,
+                transform=transforms
+            )
+            return train_dataset, test_dataset
         case "SVHN":
             train_dataset = SVHN(
                 root=datasets_dir / "SVHN",

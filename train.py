@@ -11,9 +11,9 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from torchsummary import summary
 from tqdm import tqdm
-from amp import get_amp_utils
 
 import wandb
+from amp import get_amp_utils
 from dataset import get_dataset
 from models import VAE
 from save import save
@@ -31,7 +31,7 @@ def train_model(
     test_dataset,
     device: torch.device = torch.device("cpu"),
 ) -> VAE:
-    
+
     with suppress_external_logs():
         lpips = LPIPS(net="vgg")
         lpips = lpips.to(device)
@@ -304,8 +304,8 @@ if __name__ == "__main__":
             config["image"]["size"],
             config["image"]["size"]
         ),
-        **config["model"])
-    model = model.to(device)
+        **config["model"]
+    )
 
     print("config:")
     pprint(config)
@@ -319,7 +319,7 @@ if __name__ == "__main__":
             config["image"]["size"]
         ),
         batch_size=-1,
-        device=config["training"]["device"]
+        device="cpu"
     )
 
     train_model(

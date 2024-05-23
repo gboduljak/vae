@@ -1,9 +1,14 @@
 
+from io import BytesIO
+from math import ceil
 from typing import List
 
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 from PIL import Image
+from scipy.stats import norm
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 
@@ -96,3 +101,54 @@ def interpolate(vae, num_interpolations, latent_dim, num_steps, test_dataset, de
     interp_grid = make_grid(x_interps, nrow=num_steps + 2)
     interp_grid = to_numpy(interp_grid)  # [B, H, W, C]
     return Image.fromarray(interp_grid)
+
+
+def plot_latent_space_distribution(
+    model,
+    dataloader: DataLoader,
+    latent_dim: int,
+    cols: int = 8,
+    device=torch.device('cpu')
+) -> Image:
+
+    model = model.to(device)
+    model.eval()
+
+    z = []
+    with torch.inference_mode():
+        for (x, _) in iter(dataloader):
+            x = x.to(device)
+            z.append(model.encode(x).loc)
+        z = torch.cat(z, dim=0)
+        z = z.detach().cpu().numpy()
+
+    sns.set_palette('pastel')
+    sns.set_style("whitegrid")
+    sns.set_context("paper")
+
+    rows = ceil(latent_dim / cols)
+
+    x = np.linspace(-3, 3, 128)
+    norm_pdf = norm.pdf(x)
+
+    fig = plt.figure(figsize=(30, 10))
+    fig.subplots_adjust(hspace=0.6, wspace=0.4)
+
+    for i in range(latent_dim):
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.hist(z[:, i], density=True, bins=20)
+        ax.axis("off")
+        ax.text(
+            0.5,
+            -0.35,
+            f"latent_dim={i}",
+            fontsize=10,
+            ha="center",
+            transform=ax.transAxes
+        )
+        ax.plot(x, norm_pdf)
+
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    return Image.open(buf)

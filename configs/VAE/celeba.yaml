@@ -1,22 +1,22 @@
 model:
-  name: VAE(latent_dim=8)
-  channel_mults: [1, 2, 2]
+  name: VAE
+  channel_mults: [1, 2, 2, 2, 2]
   num_channels: 32
   num_groups: 16
   norm: GroupNorm
-  latent_dim: 8
+  latent_dim: 128
   dropout: 0
 
 image:
-  channels: 1
-  size: 28
+  channels: 3
+  size: 128
 
 dataset:
-  name: MNIST
+  name: CelebA
   datasets_dir: datasets
 
 training:
-  num_epochs: 64
+  num_epochs: 256
   batch_size: 256
   lr: 0.0003
   seed: 0

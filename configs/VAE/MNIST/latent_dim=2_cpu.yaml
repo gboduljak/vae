@@ -1,22 +1,22 @@
 model:
-  name: VAE
-  channel_mults: [1, 2, 2, 2, 2]
+  name: VAE(latent_dim=2)
+  channel_mults: [1, 2, 2]
   num_channels: 32
   num_groups: 16
   norm: GroupNorm
-  latent_dim: 128
+  latent_dim: 2
   dropout: 0
 
 image:
-  channels: 3
-  size: 128
+  channels: 1
+  size: 28
 
 dataset:
-  name: CIFAR10
+  name: MNIST
   datasets_dir: datasets
 
 training:
-  num_epochs: 256
+  num_epochs: 64
   batch_size: 256
   lr: 0.0003
   seed: 0
@@ -29,8 +29,8 @@ training:
   eval_steps: 100
   checkpoints_dir: ckpts
   warmup_steps_percentage: 0.05
-  device: mps
-  amp: False
+  device: cpu
+  amp: True
   dtype: bfloat16
 
 wandb:

@@ -1,0 +1,38 @@
+model:
+  name: VAE(latent_dim=16)
+  channel_mults: [1, 2, 2, 2]
+  num_channels: 32
+  num_groups: 16
+  norm: GroupNorm
+  latent_dim: 16
+  dropout: 0
+
+image:
+  channels: 3
+  size: 32
+
+dataset:
+  name: SVHN
+  datasets_dir: datasets
+
+training:
+  num_epochs: 64
+  batch_size: 256
+  lr: 0.0003
+  seed: 0
+  num_workers: 2
+  pin_memory: True
+  prefetch_factor: 1
+  num_samples: 100
+  num_reconstructions: 100
+  num_interpolations: 10
+  eval_steps: 100
+  checkpoints_dir: ckpts
+  warmup_steps_percentage: 0.05
+  device: cuda
+  amp: True
+  dtype: bfloat16
+
+wandb:
+  project: vae
+  enabled: True

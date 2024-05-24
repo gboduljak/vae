@@ -1,18 +1,18 @@
 model:
-  name: VAE(latent_dim=2)
-  channel_mults: [1, 2, 2]
+  name: VAE(latent_dim=32)
+  channel_mults: [1, 2, 2, 2]
   num_channels: 32
   num_groups: 16
   norm: GroupNorm
-  latent_dim: 2
+  latent_dim: 32
   dropout: 0
 
 image:
-  channels: 1
-  size: 28
+  channels: 3
+  size: 32
 
 dataset:
-  name: MNIST
+  name: SVHN
   datasets_dir: datasets
 
 training:

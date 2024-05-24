@@ -12,7 +12,7 @@ image:
   size: 28
 
 dataset:
-  name: MNIST
+  name: FashionMNIST
   datasets_dir: datasets
 
 training:

@@ -89,7 +89,7 @@ def train_model(
     best_epoch = -1
     best_epoch_lpips = pow(10, 9)
 
-    autocast, grad_scaler, dtype = get_amp_utils(config)
+    autocast_factory, grad_scaler = get_amp_utils(config)
 
     for epoch in range(config["training"]["num_epochs"]):
         model.train()
@@ -103,8 +103,8 @@ def train_model(
                 x, y = batch
 
                 optimizer.zero_grad()
-                if autocast:
-                    with autocast(dtype=dtype):
+                if autocast_factory:
+                    with autocast_factory():
                         x = x.to(device)
                         _, metrics = model(x)
                         loss = metrics["loss"].mean()

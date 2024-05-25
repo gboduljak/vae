@@ -5,10 +5,11 @@ from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import torch
 from PIL import Image
-from scipy.stats import norm
+from scipy.stats import multivariate_normal, norm
 from torch.utils.data import DataLoader
 from torchvision.utils import make_grid
 
@@ -108,7 +109,7 @@ def plot_latent_space_distribution(
     dataloader: DataLoader,
     latent_dim: int,
     cols: int = 8,
-    device=torch.device('cpu')
+    device=torch.device("cpu")
 ) -> Image:
 
     model = model.to(device)
@@ -122,7 +123,7 @@ def plot_latent_space_distribution(
         z = torch.cat(z, dim=0)
         z = z.detach().cpu().numpy()
 
-    sns.set_palette('pastel')
+    sns.set_palette("pastel")
     sns.set_style("whitegrid")
     sns.set_context("paper")
 
@@ -149,7 +150,49 @@ def plot_latent_space_distribution(
         ax.plot(x, norm_pdf)
 
     buf = BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format="png")
     buf.seek(0)
     plt.close(fig)
+    return Image.open(buf)
+
+
+def plot_latent_space_in_2d(
+    embeddings: np.array,
+    labels: np.array,
+    hue: str
+):
+    sns.jointplot(
+        x="z1",
+        y="z2",
+        hue=hue,
+        palette="viridis",
+        data=pd.DataFrame({
+            "z1": embeddings[:, 0],
+            "z2": embeddings[:, 1],
+            hue: labels
+        }),
+        legend="full",
+        alpha=0.6,
+    )
+    # Define the grid for the contour plot
+    x_range = np.linspace(-4, 4, 100)
+    y_range = np.linspace(-4, 4, 100)
+    x, y = np.meshgrid(x_range, y_range)
+    # Define the mean and covariance matrix for the 2D Gaussian
+    mean = np.array([0, 0])
+    cov = np.array([[1, 0], [0, 1]])
+    # Contour plot unit Gaussian
+    plt.contour(
+        x,
+        y,
+        multivariate_normal(mean, cov).pdf(np.dstack((x, y))),
+        levels=10,
+        colors="black",
+        alpha=0.5,
+        linestyles="dashed",
+    )
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    plt.close()
+    buf.seek(0)
     return Image.open(buf)

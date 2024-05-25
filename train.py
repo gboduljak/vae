@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from amp import get_amp_utils
 from dataset import get_dataset
-from models import VAE
+from models import AE, VAE, get_model
 from save import save
 from schedulers import LinearWarmupScheduler
 from seed import get_seeded_generator, seed_everything, seeded_worker_init_fn
@@ -25,7 +25,7 @@ from visualizations import (interpolate, plot_latent_space_distribution,
 
 
 def train_model(
-    model: VAE,
+    model: AE | VAE,
     config: Dict[str, float],
     train_dataset,
     test_dataset,
@@ -297,8 +297,8 @@ if __name__ == "__main__":
         Path(config["dataset"]["datasets_dir"]),
         config["image"]["size"]
     )
-
-    model = VAE(
+    model_factory = get_model(config["model"]["name"])
+    model = model_factory(
         image_channels=config["image"]["channels"],
         image_size=(
             config["image"]["size"],

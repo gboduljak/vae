@@ -8,3 +8,6 @@ class PointMass(Distribution):
 
     def rsample(self, sample_shape: torch.Size = ...) -> torch.Tensor:
         return self.loc
+
+    def sample(self, sample_shape: torch.Size = ...) -> torch.Tensor:
+        return self.loc

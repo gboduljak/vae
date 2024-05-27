@@ -58,4 +58,4 @@ Taken directly from [Autoencoding Variational Bayes](https://arxiv.org/abs/1312.
 
 ## Reproduction
 
-To reproduce these results, download the appropriate checkpoint from `checkpoints` dir and run the notebook.
+To reproduce these results, download the appropriate checkpoint from [HuggingFace](https://huggingface.co/Gabrijel/vae/tree/main) dir and run the notebook.

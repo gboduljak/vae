@@ -10,16 +10,21 @@ import seaborn as sns
 import torch
 from PIL import Image
 from scipy.stats import multivariate_normal, norm
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision.utils import make_grid
 
 from utils import to_numpy, unnorm
 
 
-def reconstruct(vae, num_recons: int, num_per_row: int, num_channels: int, image_size: int, dataloader: DataLoader, device):
+def reconstruct(vae, num_recons: int, num_per_row: int, num_channels: int, image_size: int, dataset: Dataset, device):
     vae.eval()
     vae = vae.to(device)
 
+    dataloader = DataLoader(
+        dataset=dataset,
+        batch_size=num_recons,
+        shuffle=False
+    )
     x, _ = next(iter(dataloader))
     x = x.to(device)
     x = x[:num_recons, :, :, :]

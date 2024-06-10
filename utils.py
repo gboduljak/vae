@@ -5,6 +5,12 @@ from contextlib import contextmanager
 import torch
 
 
+def norm(x):
+    x = x.to(torch.float32)
+    x = x / 255
+    return x
+
+
 def unnorm(x):
     x = x * 255
     x = torch.floor(x)

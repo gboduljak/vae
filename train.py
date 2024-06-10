@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from amp import get_amp_utils
 from dataset import get_dataset
-from models import AE, VAE, get_model
+from models import AE, VAE, BetaVAE, get_model
 from save import save
 from schedulers import LinearWarmupScheduler
 from seed import get_seeded_generator, seed_everything, seeded_worker_init_fn
@@ -25,7 +25,7 @@ from visualizations import (interpolate, plot_latent_space_distribution,
 
 
 def train_model(
-    model: AE | VAE,
+    model: AE | VAE | BetaVAE,
     config: Dict[str, float],
     train_dataset,
     test_dataset,
@@ -139,13 +139,13 @@ def train_model(
                         10,
                         config["image"]["channels"],
                         config["image"]["size"],
-                        test_dataloader,
+                        test_dataset,
                         device
                     )
                     interpolations = interpolate(
                         model,
                         config["training"]["num_interpolations"],
-                        config["model"]["latent_dim"],
+                        model.latent_dim,
                         10,
                         test_dataset,
                         device
@@ -235,7 +235,7 @@ def train_model(
             interpolations = interpolate(
                 model,
                 config["training"]["num_interpolations"],
-                config["model"]["latent_dim"],
+                model.latent_dim,
                 10,
                 test_dataset,
                 device
@@ -243,7 +243,7 @@ def train_model(
             latent_space_distribution = plot_latent_space_distribution(
                 model,
                 test_dataloader,
-                config["model"]["latent_dim"],
+                model.latent_dim,
                 device=device
             )
             imgs_to_log = {

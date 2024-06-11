@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import torch
 from torch import autocast
-from torch.amp import GradScaler
+from torch.cuda.amp import GradScaler
 
 
 def get_amp_utils(config: Dict[str, Any]):

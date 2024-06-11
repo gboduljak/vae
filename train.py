@@ -188,7 +188,6 @@ def train_model(
                             lpips(
                                 in0=x,
                                 in1=x_hat,
-                                normalize=True
                             ).view((-1, ))
                             .detach()
                             .cpu()

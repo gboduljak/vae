@@ -1,11 +1,12 @@
 model:
   name: BetaVAE
-  channel_mults: [1, 2, 2, 2, 2]
+  channel_mults: [1, 2, 2, 4]
   num_channels: 64
   num_groups: 16
   norm: GroupNorm
   latent_channels: 3
   dropout: 0
+  beta: 1.0
 
 image:
   channels: 3
@@ -16,7 +17,7 @@ dataset:
   datasets_dir: datasets
 
 training:
-  num_epochs: 32
+  num_epochs: 256
   batch_size: 32
   lr: 0.0003
   seed: 0
@@ -29,12 +30,10 @@ training:
   eval_steps: 100
   checkpoints_dir: ckpts
   warmup_steps_percentage: 0.05
-  # device: cuda
-  # amp: True
-  # dtype: bfloat16
-  device: mps
-  amp: False
-  dtype: float32
+  device: cuda
+  amp: True
+  dtype: bfloat16
+
 wandb:
   project: vae
-  enabled: False
+  enabled: True

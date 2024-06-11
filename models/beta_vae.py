@@ -113,7 +113,7 @@ class BetaVAE(UNet):
         x = self.right_middle(x)
         x = self.up(x)
         x = self.out_proj(x)
-        x = F.sigmoid(x)
+        x = F.tanh(x)
         return Normal(x, torch.ones_like(x, device=x.device))
 
     def sample(self, num_samples: int, device) -> torch.Tensor:

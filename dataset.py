@@ -1,14 +1,22 @@
 from pathlib import Path
 
 from torchvision.datasets import CIFAR10, MNIST, SVHN, CelebA, FashionMNIST
-from torchvision.transforms import Compose, Resize, ToTensor
+from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
 
 def get_dataset(dataset: str, datasets_dir: Path, image_size: int):
-    transforms = Compose([
-        Resize((image_size, image_size)),
-        ToTensor()
-    ])
+    match dataset:
+        case "CelebA":
+            transforms = Compose([
+                Resize((image_size, image_size)),
+                ToTensor(),
+                Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+        case _:
+            transforms = Compose([
+                Resize((image_size, image_size)),
+                ToTensor()
+            ])
     match dataset:
         case "MNIST":
             train_dataset = MNIST(

@@ -16,7 +16,7 @@ import wandb
 from amp import get_amp_utils
 from dataset import get_dataset
 from models import AE, VAE, BetaVAE, get_model
-from save import save
+from save import save_locally, save_to_wandb
 from schedulers import LinearWarmupScheduler
 from seed import get_seeded_generator, seed_everything, seeded_worker_init_fn
 from utils import suppress_external_logs
@@ -89,9 +89,14 @@ def train_model(
     best_epoch = -1
     best_epoch_lpips = pow(10, 9)
 
+    latest_epoch_ckpt_path: str = "latest.ckpt"
+    best_epoch_ckpt_path: str = "best.ckpt"
+
     autocast_factory, grad_scaler = get_amp_utils(config)
 
     for epoch in range(config["training"]["num_epochs"]):
+        last_epoch = epoch == (config["training"]["num_epochs"] - 1)
+
         model.train()
         running_losses = []
 
@@ -203,7 +208,7 @@ def train_model(
             if current_epoch_lpips < best_epoch_lpips:
                 best_epoch_lpips = current_epoch_lpips
                 best_epoch = epoch
-                save(
+                best_epoch_ckpt_path = save_locally(
                     model,
                     optimizer,
                     {
@@ -214,7 +219,6 @@ def train_model(
                     },
                     Path(config["training"]["checkpoints_dir"]),
                     f"{config['dataset']['name']}/{config['model']['name']}/best",
-                    use_wandb
                 )
 
             samples = sample(
@@ -264,7 +268,7 @@ def train_model(
                     }
                 })
 
-            save(
+            latest_epoch_ckpt_path = save_locally(
                 model,
                 optimizer,
                 {
@@ -275,8 +279,10 @@ def train_model(
                 },
                 Path(config["training"]["checkpoints_dir"]),
                 f"{config['dataset']['name']}/{config['model']['name']}/latest",
-                use_wandb
             )
+
+    save_to_wandb(latest_epoch_ckpt_path, use_wandb)
+    save_to_wandb(best_epoch_ckpt_path, use_wandb)
 
 
 if __name__ == "__main__":

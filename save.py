@@ -5,7 +5,7 @@ import torch
 import wandb
 
 
-def save(model, optimizer, metadata, ckpt_dir: Path, ckpt_name: str, use_wandb: bool):
+def save_locally(model, optimizer, metadata, ckpt_dir: Path, ckpt_name: str) -> str:
     ckpt_path = ckpt_dir / f"{ckpt_name}.ckpt"
     ckpt_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -14,5 +14,10 @@ def save(model, optimizer, metadata, ckpt_dir: Path, ckpt_name: str, use_wandb: 
         'optimizer_state_dict': optimizer.state_dict(),
         'metadata': metadata,
     }, str(ckpt_path))
+
+    return str(ckpt_path)
+
+
+def save_to_wandb(ckpt_path: str, use_wandb: bool):
     if use_wandb:
-        wandb.save(str(ckpt_path))
+        wandb.save(ckpt_path)

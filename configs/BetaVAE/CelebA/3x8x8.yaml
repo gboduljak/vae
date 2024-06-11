@@ -1,11 +1,11 @@
 model:
   name: BetaVAE
-  channel_mults: [1, 2, 2, 4]
-  num_channels: 64
+  channel_mults: [1, 2, 2, 2, 2]
+  num_channels: 32
   num_groups: 16
   norm: GroupNorm
-  latent_channels: 3
   dropout: 0
+  latent_channels: 3
   beta: 1.0
 
 image:
@@ -18,7 +18,7 @@ dataset:
 
 training:
   num_epochs: 256
-  batch_size: 32
+  batch_size: 256
   lr: 0.0003
   seed: 0
   num_workers: 2
@@ -36,4 +36,4 @@ training:
 
 wandb:
   project: vae
-  enabled: True
+  enabled: False

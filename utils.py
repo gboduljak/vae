@@ -8,12 +8,12 @@ import torch
 def norm(x):
     x = x.to(torch.float32)
     x = x / 255
-    x = 2 * x - 1
+    # x = 2 * x - 1
     return x
 
 
 def unnorm(x):
-    x = 0.5 * (x + 1)
+    # x = 0.5 * (x + 1)
     x = x * 255
     x = torch.floor(x)
     x = x.to(torch.uint8)

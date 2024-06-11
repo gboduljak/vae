@@ -1,11 +1,11 @@
 model:
   name: BetaVAE
-  channel_mults: [1, 2, 2, 2, 4]
-  num_channels: 64
+  channel_mults: [1, 2, 2, 4]
+  num_channels: 32
   num_groups: 16
   norm: GroupNorm
-  latent_channels: 3
   dropout: 0
+  latent_channels: 3
   beta: 1.0
 
 image:

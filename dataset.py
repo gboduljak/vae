@@ -5,18 +5,10 @@ from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
 
 def get_dataset(dataset: str, datasets_dir: Path, image_size: int):
-    match dataset:
-        case "CelebA":
-            transforms = Compose([
-                Resize((image_size, image_size)),
-                ToTensor(),
-                Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-            ])
-        case _:
-            transforms = Compose([
-                Resize((image_size, image_size)),
-                ToTensor()
-            ])
+    transforms = Compose([
+        Resize((image_size, image_size)),
+        ToTensor()
+    ])
     match dataset:
         case "MNIST":
             train_dataset = MNIST(

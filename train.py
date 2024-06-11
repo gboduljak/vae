@@ -232,7 +232,7 @@ def train_model(
                 10,
                 config["image"]["channels"],
                 config["image"]["size"],
-                test_dataloader,
+                test_dataset,
                 device
             )
             interpolations = interpolate(
